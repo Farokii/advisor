@@ -1,6 +1,6 @@
+import jwt
 from datetime import timezone, timedelta, datetime
 from typing import Optional
-import jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -78,6 +78,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except jwt.PyJWTError:
+    except jwt.PyJWTError:#except=万一
         raise credentials_exception
     return {"id": int(user_id)}
