@@ -1,7 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from security import get_current_user
 
-
 def get_current_user_id(current_user: dict = Depends(get_current_user)):
     """获取当前用户的ID
 

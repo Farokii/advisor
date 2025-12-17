@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Enum,DateTime
+from sqlalchemy import Column, Integer, String, Text, Date, Enum,DateTime,Float
 from sqlalchemy.sql import func
 from SQL.database import Base
 from enum import Enum as PyEnum
@@ -20,7 +20,7 @@ class User(Base):
     gender = Column(Enum(Gender),default=Gender.other)
     bio = Column(Text,nullable=True)
     about = Column(Text, nullable=True)
-    coin = Column(Integer, default=0)
+    coin = Column(Float, default=100.0)
     created_at = Column(DateTime,server_default=func.now())
     updated_at = Column(DateTime,onupdate=func.now())
 

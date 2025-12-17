@@ -37,7 +37,9 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict,expires_delta: Optional[timedelta] = None) -> str:
+
+    """expires_delta: Optional[timedelta] = None"""
     """创建JWT访问令牌
 
     数据流动：
@@ -58,7 +60,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """获取当前认证用户信息
-
     数据流动：
     1. 从请求头获取JWT令牌
     2. 验证令牌签名和有效期

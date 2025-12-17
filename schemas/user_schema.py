@@ -1,13 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime,date
-import re
-
-
-def to_camel(string: str) -> str:
-    """将 snake_case 转换为 camelCase（首字母小写）"""
-    return re.sub(r'_([a-z])', lambda m: m.group(1).upper(), string)
-
+from utils import to_camel
 
 class UserBase(BaseModel):
     """基础用户信息（不含密码、ID、时间戳）"""
@@ -57,7 +51,7 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     """用户信息更新：不包含 phone、password、coin（由系统管理）"""
-    name: str = Field(default="Anonymous", max_length=50)
+    name: str = Field(default="", max_length=50)
     birth: Optional[date] = None
     gender: Optional[str] = Field(default=None, pattern=r"^(male|female|other)$")
     bio: str = Field(default="", max_length=200)
@@ -73,7 +67,7 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     """返回给前端的用户信息（含系统字段）"""
     id: int
-    coin: int = Field(ge=0, description="用户金币余额")
+    coin: float = Field(ge=0.0, description="用户金币余额")
     created_at: datetime
     updated_at: Optional[datetime]=None
 
