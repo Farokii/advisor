@@ -52,3 +52,11 @@ def update_profile(db: Session,user_id :int,user: user_schema.UserUpdate):
             detail="Failed to update user profile",
         )
     return updated_user
+
+#4.用户端-顾问列表
+def active_advisors(db: Session,user_id :int):
+    return user_crud.get_active_advisors(db, user_id)
+
+#5.用户端-顾问主页
+def get_advisor_profile(db: Session, user_id: int, advisor_id: user_schema.AdvisorID):
+    return user_crud.get_advisor_profile(db,advisor_id)

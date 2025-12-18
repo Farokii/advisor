@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Date, Enum,DateTime,Float
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from SQL.database import Base
 from enum import Enum as PyEnum
@@ -24,3 +25,4 @@ class User(Base):
     created_at = Column(DateTime,server_default=func.now())
     updated_at = Column(DateTime,onupdate=func.now())
 
+    # orders = relationship("Order",back_populates="user")

@@ -40,3 +40,12 @@ def update_user_profile(db:Session,user_id:int,user:user_schema.UserUpdate):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def get_active_advisors(db:Session,user_id:int):
+    active_advisors=db.query(advisor_model.Advisor).filter(
+        advisor_model.Advisor.service_status == advisor_model.ServiceStatus.in_service).all()
+    return active_advisors
+
+def get_advisor_profile(db: Session, advisor_id: user_schema.AdvisorID):
+    advisor=db.query(advisor_model.Advisor).filter(advisor_model.Advisor.id == advisor_id.id).first()
+    return advisor

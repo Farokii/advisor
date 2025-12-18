@@ -9,7 +9,7 @@ class Settings:
     """应用配置类，管理所有环境变量"""
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key")  # 用于JWT签名的密钥
     ALGORITHM: str = "HS256"  # JWT使用的算法
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # JWT令牌过期时间(分钟)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # JWT令牌过期时间(分钟)
 
     # 数据库配置
     MYSQL_USER: str = os.getenv("MYSQL_USER", "root")

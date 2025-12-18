@@ -22,7 +22,6 @@ class UserBase(BaseModel):
         extra="forbid"           # 禁止传入未定义字段
     )
 
-
 class UserCreate(UserBase):
     """用户注册：包含密码"""
     password: str = Field(
@@ -48,7 +47,6 @@ class UserLogin(BaseModel):
         extra="forbid"  # 禁止传入未定义字段
     )
 
-
 class UserUpdate(BaseModel):
     """用户信息更新：不包含 phone、password、coin（由系统管理）"""
     name: str = Field(default="", max_length=50)
@@ -63,7 +61,6 @@ class UserUpdate(BaseModel):
         extra="forbid"
     )
 
-
 class UserInDB(UserBase):
     """返回给前端的用户信息（含系统字段）"""
     id: int
@@ -75,4 +72,39 @@ class UserInDB(UserBase):
         alias_generator=to_camel,
         populate_by_name=True,
         from_attributes=True  # 替代 v1 的 orm_mode=True，支持从 ORM 对象构建
+    )
+
+class ActiveAdvisors(BaseModel):
+    id: int
+    name: str = Field(..., max_length=50)
+    bio: str = Field(default="", max_length=20)
+    work_status: str = Field(..., pattern=r"^(available|busy|urgent_only)$")
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True,from_attributes=True)
+#用户端-顾问主页
+class AdvisorID(BaseModel):
+    id: int
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+class AdvisorProfile(BaseModel):
+    id: int
+    name: str = Field(default="", max_length=50)
+    bio: str = Field(default="", max_length=20)
+    accept_text_reading: bool
+    price_text_reading: float = Field(..., ge=3.0, le=36.0, description="每单价格，$")
+
+    accept_audio_reading: bool
+    price_audio_reading: float = Field(..., ge=3.0, le=36.0, description="每单价格，$")
+
+    accept_video_reading: bool
+    price_video_reading: float = Field(..., ge=3.0, le=36.0, description="每单价格，$")
+
+    accept_live_text_chat: bool
+    price_live_text_chat: float = Field(..., ge=1.5, le=18.0, description="每分钟价格，$")
+
+    accept_live_audio_chat: bool
+    price_live_audio_chat: float = Field(..., ge=1.5, le=18.0, description="每分钟价格，$")
+    about: str = Field(default="", max_length=500)
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True
     )

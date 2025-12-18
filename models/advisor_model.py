@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Date, Enum,DateTime,Float,Boolean
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from SQL.database import Base
 from enum import Enum as PyEnum
@@ -24,27 +25,29 @@ class Advisor(Base):
     work_experience = Column(String(50),nullable=False)#工作年限
     about = Column(Text, nullable=True)
 
-    service_status=Column(Enum(ServiceStatus), default=ServiceStatus.out_of_service)#工作状态
+    service_status=Column(Enum(ServiceStatus), default=ServiceStatus.in_service)#工作状态
     work_status=Column(Enum(WorkStatus), default=WorkStatus.available)
     readings=Column(Integer, nullable=False,default=0)#总订单数
     ratings = Column(Float, nullable=False,default=0.0)#顾问评分
     review_count=Column(Integer, nullable=False,default=0)#评论数
     coin = Column(Float, nullable=False,default=100.0)
 
-    accept_text_reading=Column(Boolean, nullable=False,default=False)
+    accept_text_reading=Column(Boolean, nullable=False,default=True)
     price_text_reading=Column(Float, nullable=False,default=3.0)
 
-    accept_audio_reading = Column(Boolean, nullable=False, default=False)
+    accept_audio_reading = Column(Boolean, nullable=False, default=True)
     price_audio_reading = Column(Float, nullable=False, default=3.0)
 
-    accept_video_reading = Column(Boolean, nullable=False, default=False)
+    accept_video_reading = Column(Boolean, nullable=False, default=True)
     price_video_reading = Column(Float, nullable=False, default=3.0)
 
-    accept_live_text_chat = Column(Boolean, nullable=False, default=False)
+    accept_live_text_chat = Column(Boolean, nullable=False, default=True)
     price_live_text_chat = Column(Float, nullable=False, default=1.5)
 
-    accept_live_audio_chat = Column(Boolean, nullable=False, default=False)
+    accept_live_audio_chat = Column(Boolean, nullable=False, default=True)
     price_live_audio_chat = Column(Float, nullable=False, default=1.5)
 
     created_at = Column(DateTime,server_default=func.now())
     updated_at = Column(DateTime,onupdate=func.now())
+
+    #orders = relationship("Order",back_populates="advisor")
