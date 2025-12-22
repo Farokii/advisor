@@ -25,7 +25,7 @@ class AdvisorCreate(AdvisorBase):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=128,
+        max_length=20,
         description="密码至少8位",
         examples=["MySecurePass123"]
     )

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime,date
 from utils import to_camel
+from models.order_model import OrderType, OrderStatus
 
 class UserBase(BaseModel):
     """基础用户信息（不含密码、ID、时间戳）"""
@@ -27,7 +28,7 @@ class UserCreate(UserBase):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=128,
+        max_length=20,
         description="密码至少8位",
         examples=["MySecurePass123"]
     )
@@ -79,7 +80,7 @@ class ActiveAdvisors(BaseModel):
     name: str = Field(..., max_length=50)
     bio: str = Field(default="", max_length=20)
     work_status: str = Field(..., pattern=r"^(available|busy|urgent_only)$")
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True,from_attributes=True)
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 #用户端-顾问主页
 class AdvisorID(BaseModel):
     id: int
@@ -108,3 +109,20 @@ class AdvisorProfile(BaseModel):
         populate_by_name=True,
         from_attributes=True
     )
+
+#用户端-创建订单
+class CreateOrder(BaseModel):
+    advisor_id: int
+    order_type: OrderType = Field(...)
+    general_situation: str = Field(..., max_length=3000)
+    specific_question: str = Field(..., max_length=200)
+    is_urgent: bool
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+class CreateOrderResponse(BaseModel):
+    user_id: int
+    advisor_id: int
+    order_type: OrderType = Field(...)
+    order_status: OrderStatus = Field(...)
+    is_urgent: bool
+    created_at: datetime
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)

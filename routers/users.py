@@ -29,11 +29,18 @@ async def user_update_profile(
 async def active_advisors(db: Session = Depends(get_db), current_user_id: int=Depends(dependencies.get_current_user_id)):
     return user_service.active_advisors(db, current_user_id)
 #用户端-顾问主页
-@router.get("/advisor-profile", response_model=user_schema.AdvisorProfile)
+@router.get("/advisor-profile", response_model = user_schema.AdvisorProfile)
 async def get_advisor_profile(
         advisor_id: user_schema.AdvisorID,
         db: Session=Depends(get_db),
         current_usr_id: int=Depends(dependencies.get_current_user_id)
 ):
     return user_service.get_advisor_profile(db,current_usr_id,advisor_id)
-#@router.post("/create-order", response_model=)
+# 用户端-创建订单
+@router.post("/create-order", response_model = user_schema.CreateOrderResponse)
+async def create_order(
+        order: user_schema.CreateOrder,
+        db: Session = Depends(get_db),
+        current_user_id: int = Depends(dependencies.get_current_user_id)
+):
+    return user_service.create_order(db,current_user_id,order)

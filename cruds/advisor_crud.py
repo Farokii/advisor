@@ -5,6 +5,8 @@ from security import get_password_hash
 
 def get_advisor_by_phone(db:Session,phone:str):
     return db.query(advisor_model.Advisor).filter(advisor_model.Advisor.phone_number==phone).first()
+def get_advisor_by_id(db:Session,advisor_id: int):
+    return db.query(advisor_model.Advisor).filter(advisor_model.Advisor.id == advisor_id).first()
 
 def create_advisor(db:Session, advisor: advisor_schema.AdvisorCreate):
     hashed_password = get_password_hash(advisor.password)

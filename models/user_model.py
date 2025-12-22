@@ -25,4 +25,4 @@ class User(Base):
     created_at = Column(DateTime,server_default=func.now())
     updated_at = Column(DateTime,onupdate=func.now())
 
-    # orders = relationship("Order",back_populates="user")
+    orders = relationship("Order",back_populates="user")

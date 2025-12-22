@@ -50,4 +50,4 @@ class Advisor(Base):
     created_at = Column(DateTime,server_default=func.now())
     updated_at = Column(DateTime,onupdate=func.now())
 
-    #orders = relationship("Order",back_populates="advisor")
+    orders = relationship("Order",back_populates="advisor")

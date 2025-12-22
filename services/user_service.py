@@ -5,7 +5,8 @@ import security
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
 from schemas import user_schema
-from cruds import user_crud
+from cruds import user_crud, advisor_crud, order_crud
+from models.order_model import OrderType, OrderStatus
 settings = Settings()
 
 #1.用户端-注册
@@ -60,3 +61,55 @@ def active_advisors(db: Session,user_id :int):
 #5.用户端-顾问主页
 def get_advisor_profile(db: Session, user_id: int, advisor_id: user_schema.AdvisorID):
     return user_crud.get_advisor_profile(db,advisor_id)
+
+#6.用户端-创建订单
+def create_order(db: Session, user_id :int, order: user_schema.CreateOrder):
+    db_user = user_crud.get_user_by_id(db, user_id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    db_advisor = advisor_crud.get_advisor_by_id(db, order.advisor_id)
+    #判断订单顾问是否存在
+    if db_advisor is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Advisor not found",
+        )
+    # 判断订单顾问是否处于适合接单状态
+    if db_advisor.service_status == "out_of_service" or db_advisor.work_status == "busy":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The advisor is not accepting order now",
+        )
+    # 判断顾问是否只接受加急订单，以及用户订单是否加急
+    if db_advisor.work_status == "urgent_only" and order.is_urgent != True:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The advisor only accepts urgent order",
+        )
+    # 判断用户订单类型是否合法
+    if order.order_type not in OrderType:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid order type: {order.order_type}",
+        )
+    # 判断顾问是否接受该类型订单
+    if getattr(db_advisor, f"accept_{order.order_type.value}") is False:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The advisor doesn't accept {order.order_type} order",
+        )
+    # 判断用户目前持有金币是否足够支付订单
+    price = getattr(db_advisor, f"price_{order.order_type.value}")
+    if order.is_urgent : price += price * 0.5 # 加急订单涨价一半
+    if db_user.coin < price:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The user is unable to pay for this order",
+        )
+
+    new_order = order_crud.create_order(db, user_id, order, price)
+    return new_order
