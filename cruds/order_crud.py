@@ -1,4 +1,4 @@
-from models import order_model
+from models import order_model, user_model, advisor_model
 from schemas import user_schema, advisor_schema, order_schema
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
@@ -7,6 +7,7 @@ from config import Settings
 from datetime import datetime, timedelta
 from cruds import advisor_crud, user_crud
 from SQL.database import SessionLocal
+from coin_trans import add_coin_trans
 import json
 settings = Settings()
 
@@ -25,6 +26,19 @@ def create_order(db: Session, user_id: int, order: user_schema.CreateOrder, pric
         current_price=price,
     )
     db.add(db_order)
+    #扣除用户金币
+    db_user = db.query(user_model.User).filter(user_model.User.id == user_id).first()
+    db_user.coin -= price
+    # 添加用户流水信息
+    if db_order.is_urgent:
+        add_coin_trans(user_id, "Speed Up Order", f"-{price * 1/3}")
+        add_coin_trans(user_id, f"{db_order.order_type}", f"-{price * 2/3}")
+    else: add_coin_trans(user_id, f"{db_order.order_type}", f"-{price}")
+
+    #增加顾问订单数
+    db_advisor = db.query(advisor_model.Advisor).filter(advisor_model.Advisor.id == order.advisor_id).first()
+    db_advisor.readings += 1
+
     db.commit()
     db.refresh(db_order)
     ttl_final = settings.URGENT_EXPIRE_MINUTES * 60
@@ -47,12 +61,11 @@ def process_expired_orders():
     now = datetime.now()
 
     # --- 1. 处理加急订单的第一阶段过期 (1小时) ---
-    # 条件: is_urgent=True, status='pending', urgent_refunded=False, created_at < now - 1 hour
     expiry_urgent_time = now - timedelta(minutes=settings.URGENT_EXPIRE_MINUTES)
     expired_urgent_orders = db.query(order_model.Order).filter(
         and_(
             order_model.Order.is_urgent == True,
-            order_model.Order.order_status == 'pending',
+            order_model.Order.order_status == order_model.OrderStatus.pending,
             order_model.Order.created_at < expiry_urgent_time
         )
     ).all()
@@ -68,11 +81,17 @@ def process_expired_orders():
                 user_id=order.user_id,
                 refund_amount=urgent_fee,
             )
-
+            add_coin_trans(order.user_id, "Speed-up Expired Refund", f"+{urgent_fee}")
             # 2. 更新订单状态 (标记加急费已退，订单转为普通)
             order.is_urgent = False
             order.current_price -= urgent_fee
             # 订单状态仍为 'pending'，等待24小时最终过期
+
+            # 删除缓存信息，下次查看时会重新查询数据库并生成新缓存
+            cache_key = f"order:details:{order.id}"
+            cache_value = redis_client.get(cache_key)
+            if cache_value:
+                redis_client.delete(cache_key)
 
             print(f"Downgrade urgent order {order.id} to normal, refunded {urgent_fee} coins to {order.user_id}.")
 
@@ -84,11 +103,11 @@ def process_expired_orders():
             db.refresh(order)
             continue # 继续处理下一个
 
-    # --- 2. 处理普通订单和最终过期订单 (24小时) ---
+    # --- 2. 处理普通订单和最终过期订单 ---
     expiry_normal_time = now - timedelta(minutes=settings.NORMAL_EXPIRE_MINUTES)
     expired_normal_orders = db.query(order_model.Order).filter(
         and_(
-            order_model.Order.order_status == 'pending',
+            order_model.Order.order_status == order_model.OrderStatus.pending,
             order_model.Order.created_at < expiry_normal_time,
         )
     ).all()
@@ -101,14 +120,21 @@ def process_expired_orders():
             user_crud.refund_user_coins(
                 db=db,
                 user_id=order.user_id,
-                refund_amount=refund_amount, # 负数表示退款
+                refund_amount=refund_amount,
             )
-
+            add_coin_trans(order.user_id, "Speed-up Refund", f"+{refund_amount}")
             # 4. 更新订单状态为过期
-            order.order_status = 'expired'
+            order.order_status = order_model.OrderStatus.expired
             order.current_price = 0.0
             order.is_urgent = False
             order.final_amount = 0.0
+
+            # 删除缓存信息，下次查看时会重新查询数据库并生成新缓存
+            cache_key = f"order:details:{order.id}"
+            cache_value = redis_client.get(cache_key)
+            if cache_value:
+                redis_client.delete(cache_key)
+
             print(f"Normal expired order {order.id} is refunded, refund {refund_amount} coins to {order.user_id}.")
 
         except Exception as e:

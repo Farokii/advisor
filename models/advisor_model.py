@@ -27,6 +27,7 @@ class Advisor(Base):
 
     service_status=Column(Enum(ServiceStatus), default=ServiceStatus.in_service)#工作状态
     work_status=Column(Enum(WorkStatus), default=WorkStatus.available)
+    completed_readings = Column(Integer,nullable=False,default=0)
     readings=Column(Integer, nullable=False,default=0)#总订单数
     ratings = Column(Float, nullable=False,default=0.0)#顾问评分
     review_count=Column(Integer, nullable=False,default=0)#评论数
@@ -51,3 +52,4 @@ class Advisor(Base):
     updated_at = Column(DateTime,onupdate=func.now())
 
     orders = relationship("Order",back_populates="advisor")
+    reviews = relationship("Review",back_populates="advisor")

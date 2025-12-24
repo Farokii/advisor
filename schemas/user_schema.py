@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime,date
 from utils import to_camel
 from models.order_model import OrderType, OrderStatus
-
+from schemas.review_schema import AdvisorProfileReview
 class UserBase(BaseModel):
     """基础用户信息（不含密码、ID、时间戳）"""
     phone_number: str = Field(...,min_length=6,max_length=20
@@ -84,11 +84,20 @@ class ActiveAdvisors(BaseModel):
 #用户端-顾问主页
 class AdvisorID(BaseModel):
     id: int
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 class AdvisorProfile(BaseModel):
     id: int
-    name: str = Field(default="", max_length=50)
+    name: str = Field(..., max_length=50)
     bio: str = Field(default="", max_length=20)
+    about: str = Field(default="", max_length=500)
+    work_experience: str = Field(..., max_length=50)
+
+    rating: float = Field(..., ge=1.0, le=5.0)
+    review_count: int = Field(..., ge=0)
+
+    readings: int = Field(default=0, ge=0)
+    on_time: str = Field(default="", max_length=5)
+
     accept_text_reading: bool
     price_text_reading: float = Field(..., ge=3.0, le=36.0, description="每单价格，$")
 
@@ -103,12 +112,17 @@ class AdvisorProfile(BaseModel):
 
     accept_live_audio_chat: bool
     price_live_audio_chat: float = Field(..., ge=1.5, le=18.0, description="每分钟价格，$")
-    about: str = Field(default="", max_length=500)
+
+
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,
         from_attributes=True
     )
+class AdvisorProfileResponse(BaseModel):
+    profile: AdvisorProfile
+    reviews: Optional[List[AdvisorProfileReview]] = None
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 #用户端-创建订单
 class CreateOrder(BaseModel):

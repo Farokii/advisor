@@ -26,7 +26,9 @@ class Settings:
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
     REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-    ORDER_DETAILS_EXPIRE_MINUTES: int = 300
-    REVIEW_EXPIRE_MINUTES: int = 360
+
+    ORDER_DETAILS_EXPIRE_MINUTES: int = 60
+    REVIEW_EXPIRE_MINUTES: int = 30
+    COIN_TRANS_EXPIRE_DAYS: int = 3
 
     DEBUG: bool = os.getenv("DEBUG", "False") == "True"  # 调试模式

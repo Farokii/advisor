@@ -1,5 +1,5 @@
 import dependencies
-from schemas import user_schema, order_schema
+from schemas import user_schema, order_schema, review_schema
 from services import user_service
 from fastapi import FastAPI,Depends,HTTPException,APIRouter
 from SQL.database import engine,get_db,Base
@@ -30,7 +30,7 @@ async def user_update_profile(
 async def active_advisors(db: Session = Depends(get_db), current_user_id: int=Depends(dependencies.get_current_user_id)):
     return user_service.active_advisors(db, current_user_id)
 #用户端-顾问主页
-@router.get("/advisor-profile", response_model = user_schema.AdvisorProfile)
+@router.get("/advisor-profile", response_model = user_schema.AdvisorProfileResponse)
 async def get_advisor_profile(
         advisor_id: user_schema.AdvisorID,
         db: Session=Depends(get_db),
@@ -46,7 +46,7 @@ async def create_order(
 ):
     return user_service.create_order(db,current_user_id,order)
 #用户端-创建订单
-@router.get("/order-list",response_model=List[order_schema.OrderListResponse])
+@router.get("/order-list", response_model = List[order_schema.OrderListResponse])
 async def order_list(db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
     user_order_list = user_service.order_list(db,current_user_id)
     if user_order_list:
@@ -67,3 +67,14 @@ async def order_details(order_id: int, db: Session = Depends(get_db), current_us
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The order not exists"
         )
+
+# 用户端-订单评论打赏
+@router.post("/review-tip/{order_id}", response_model = dict)
+async def review_tip(order_id: int,
+                    review: review_schema.ReviewInfo,
+                    db: Session = Depends(get_db),
+                    current_user_id: int = Depends(dependencies.get_current_user_id)):
+    return user_service.review_tip(order_id, review,db, current_user_id)
+
+# 用户端-收藏顾问
+#@router.get("/save-advisor/{advisor_id}", response_model = dict)

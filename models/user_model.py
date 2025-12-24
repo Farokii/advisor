@@ -26,3 +26,5 @@ class User(Base):
     updated_at = Column(DateTime,onupdate=func.now())
 
     orders = relationship("Order",back_populates="user")
+    reviews = relationship("Review",back_populates="user")
+    favorites = relationship("Favorite",back_populates="user")

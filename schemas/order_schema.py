@@ -15,6 +15,8 @@ class OrderListResponse(BaseModel):
     specific_question: str = Field(..., max_length=200)
     created_at: datetime
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
 class OrderDetailsResponse(BaseModel):
     order_id: int
     user_id: int

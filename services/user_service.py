@@ -4,8 +4,8 @@ from config import Settings
 import security
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
-from schemas import user_schema
-from cruds import user_crud, advisor_crud, order_crud
+from schemas import user_schema, review_schema
+from cruds import user_crud, advisor_crud, order_crud, review_crud
 from models.order_model import OrderType, OrderStatus
 settings = Settings()
 
@@ -131,3 +131,23 @@ def order_details(db: Session, user_id: int, order_id: int):
             detail=f"The user {user_id} is not allowed to see order {order_id} details",
         )
     return order_crud.get_order_details(db, order_id)
+
+
+def review_tip(order_id: int, review: review_schema.ReviewInfo, db: Session, user_id : int):
+    db_order = order_crud.get_order_by_id(db, order_id)
+    if db_order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+    if db_order.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The user {user_id} is not allowed to review or tip order {order_id}",
+        )
+    if db_order.order_status == OrderStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The order {order_id} is pending and can't be reviewed now",
+        )
+    return review_crud.review_tip(db, order_id, review, user_id)
