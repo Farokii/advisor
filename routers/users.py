@@ -1,10 +1,11 @@
 import dependencies
-from schemas import user_schema
+from schemas import user_schema, order_schema
 from services import user_service
 from fastapi import FastAPI,Depends,HTTPException,APIRouter
 from SQL.database import engine,get_db,Base
 from sqlalchemy.orm import Session
 from typing import List
+from fastapi import HTTPException,status
 router = APIRouter(prefix="/api/v1/users",tags=["users"])
 #用户-注册接口
 @router.post("/register", response_model=user_schema.UserInDB)
@@ -44,3 +45,25 @@ async def create_order(
         current_user_id: int = Depends(dependencies.get_current_user_id)
 ):
     return user_service.create_order(db,current_user_id,order)
+#用户端-创建订单
+@router.get("/order-list",response_model=List[order_schema.OrderListResponse])
+async def order_list(db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
+    user_order_list = user_service.order_list(db,current_user_id)
+    if user_order_list:
+        return user_order_list
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No orders found"
+            )
+#用户端-订单详情
+@router.get("/order-details/{order_id}", response_model = order_schema.OrderDetailsResponse)
+async def order_details(order_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
+    user_order_details = user_service.order_details(db, current_user_id, order_id)
+    if user_order_details:
+        return user_order_details
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The order not exists"
+        )

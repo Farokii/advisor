@@ -31,7 +31,7 @@ class Order(Base):
 
     general_situation = Column(String(3000), nullable=False)  # 一般个人情况
     specific_question = Column(String(200), nullable=False)  # 具体问题
-    reply = Column(String(1000), nullable=True) # 顾问回复（暂时只能回复reading订单）
+    reply = Column(String(5000), nullable=True) # 顾问回复（暂时只能回复reading订单）
 
     order_status = Column(Enum(OrderStatus), default=OrderStatus.pending, nullable=False, index=True)  # 状态
     completed_at = Column(DateTime, nullable=True)  # 完成时间

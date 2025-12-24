@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime,date
 from utils import to_camel
+from models.order_model import OrderStatus, OrderType
 
 class AdvisorBase(BaseModel):
     """基础顾问信息（不含密码、ID、时间戳）"""
@@ -157,3 +158,13 @@ class UpdatePriceResponse(BaseModel):
 
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True,from_attributes=True)
+
+class Reply(BaseModel):
+    reply: str = Field(..., max_length=5000)
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+class CompleteOrderResponse(BaseModel):
+    order_id: int
+    completed_at: Optional[datetime] = None
+    profit: float
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+

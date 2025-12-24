@@ -113,3 +113,21 @@ def create_order(db: Session, user_id :int, order: user_schema.CreateOrder):
 
     new_order = order_crud.create_order(db, user_id, order, price)
     return new_order
+
+
+def order_list(db: Session, user_id : int):
+    return order_crud.user_order_list(db, user_id)
+
+def order_details(db: Session, user_id: int, order_id: int):
+    order = order_crud.get_order_by_id(db, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+    if order.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The user {user_id} is not allowed to see order {order_id} details",
+        )
+    return order_crud.get_order_details(db, order_id)

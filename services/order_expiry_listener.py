@@ -71,21 +71,23 @@ def handle_final_expiry(order_id: int):
         ).first()
 
         if not order:
+            print(f"[Normal] Order {order_id} not found or already processed")
             return
 
         # 退还剩余金币（如果是加急且已降级，则退 1.0x；如果是普通，也退 1.0x）
         # 注意：加急订单在降级时已退 0.5x，这里退剩下的 1.0x
-        refund_amount = order.current_price * (2 / 3) if order.is_urgent else order.current_price
+        refund_amount = order.current_price
         user_crud.refund_user_coins(db, order.user_id, refund_amount)
-
+        order.final_amount = 0.0
         # 标记为 expired
         order.order_status = order_model.OrderStatus.expired
+        order.is_urgent = False
         db.commit()
-        print(f"[Final] Expired order {order_id}, refunded {refund_amount} gold to user {order.user_id}")
+        print(f"[Normal] Expired order {order_id}, refunded {refund_amount} gold to user {order.user_id}")
 
     except Exception as e:
         db.rollback()
-        print(f"[Final] Error expiring {order_id}: {e}")
+        print(f"[Normal] Error expiring {order_id}: {e}")
     finally:
         db.close()
 

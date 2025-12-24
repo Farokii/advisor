@@ -119,6 +119,7 @@ class CreateOrder(BaseModel):
     is_urgent: bool
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 class CreateOrderResponse(BaseModel):
+    id: int
     user_id: int
     advisor_id: int
     order_type: OrderType = Field(...)
@@ -126,3 +127,4 @@ class CreateOrderResponse(BaseModel):
     is_urgent: bool
     created_at: datetime
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+

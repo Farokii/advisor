@@ -2,7 +2,9 @@ import security
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
 from schemas import advisor_schema
-from cruds import advisor_crud
+from cruds import advisor_crud, order_crud
+from models import order_model
+
 #1.顾问端-注册
 def register(db: Session, advisor: advisor_schema.AdvisorCreate):
     #检查手机号是否已注册
@@ -76,3 +78,39 @@ def update_price(db: Session, advisor_id: int, advisor: advisor_schema.UpdatePri
             detail="Failed to update advisor price",
         )
     return updated_advisor
+# 8.顾问端-查看订单列表
+def order_list(db: Session, advisor_id: int):
+    return order_crud.advisor_order_list(db, advisor_id)
+# 9.顾问端-查看订单详情
+def order_details(db: Session, advisor_id: int, order_id: int):
+    order = order_crud.get_order_by_id(db, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+    if order.advisor_id != advisor_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The advisor {advisor_id} is not allowed to see order {order_id} details",
+        )
+    return order_crud.get_order_details(db, order_id)
+# 10.顾问端-回复订单
+def complete_order(db: Session, advisor_id: int, order_id: int, reply: advisor_schema.Reply):
+    order = order_crud.get_order_by_id(db, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+    if order.advisor_id != advisor_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Advisor {advisor_id} is not allowed to complete order {order_id}",
+        )
+    if order.order_status != order_model.OrderStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Order {order_id} is not pending",
+        )
+    return order_crud.complete_order(db, order_id, advisor_id,reply)

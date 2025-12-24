@@ -12,7 +12,7 @@ HEADERS = {"Content-Type": "application/json"}
 TEST_DATA = {
     "user_phone": "13800112233",
     "user_password": "123456789",
-    "advisor_phone": "13900139001",
+    "advisor_phone": "13477438613",
     "advisor_password": "123456789",
 }
 
@@ -130,7 +130,29 @@ def login_user():
     except Exception as e:
         log(f"❌ 请求异常: {e}")
         return False
-
+@depends()
+def login_advisor():
+    global GLOBAL_STATE
+    url = f"{BASE_URL}/advisors/login"
+    data = {
+        "phone_number": TEST_DATA["advisor_phone"],
+        "password": TEST_DATA["advisor_password"]
+    }
+    try:
+        resp = requests.post(url, json=data, headers=HEADERS)
+        log(f"【顾问登录】状态码: {resp.status_code}")
+        print_response(resp)
+        if resp.status_code == 200:
+            GLOBAL_STATE["TOKEN"] = resp.json().get("access_token")
+            # log(f"🔑 Authorization Header: {GLOBAL_STATE['TOKEN']}")  # 打印前30字符
+            log("✅ 登录成功，已获取 Token")
+            return True
+        else:
+            log(f"❌ 登录失败")
+            return False
+    except Exception as e:
+        log(f"❌ 请求异常: {e}")
+        return False
 
 @depends()  # 无依赖
 def register_advisor():
@@ -188,7 +210,7 @@ def create_order():
         log("❌ 缺少必要状态，请检查依赖是否正确执行")
         return False
 
-    url = f"{BASE_URL}/users/creat-order"
+    url = f"{BASE_URL}/users/create-order"
     data = {
         "advisorId": 2,
         "orderType": "text_reading",
@@ -213,17 +235,17 @@ def create_order():
         return False
 
 
-@depends("login_user")  # 依赖登录和订单创建
-def reply_order():
+@depends("login_advisor")  # 依赖登录和订单创建
+def complete_order():
     if not GLOBAL_STATE["TOKEN"] or not GLOBAL_STATE["ORDER_ID"]:
-        log("❌ 缺少必要状态，请检查依赖是否正确执行")
+        log("❌顾问未登录 或 未找到代处理订单")
         return False
 
-    url = f"{BASE_URL}/orders/{GLOBAL_STATE['ORDER_ID']}/reply"
-    data = {"reply_content": "这是自动回复内容"}
+    url = f"{BASE_URL}/advisors/complete-order/{GLOBAL_STATE['ORDER_ID']}"
+    data = {"reply": "abcdefghijklmnopqrstuvwxyz"}
     headers = {**HEADERS, "Authorization": f"Bearer {GLOBAL_STATE['TOKEN']}"}
     try:
-        resp = requests.post(url, json=data, headers=headers)
+        resp = requests.patch(url, json=data, headers=headers)
         log(f"【回复订单】状态码: {resp.status_code}")
         print_response(resp)
         if resp.status_code == 200:
@@ -238,10 +260,11 @@ def reply_order():
 
 
 # ===== 流程测试 =====
-def test_user_flow():
+# 1.用户登录——用户创建订单——顾问登录——顾问回复订单
+def flow1():
     """完整的用户流程测试"""
     log("=== 开始用户流程测试 ===")
-    flow_steps = ["register_user", "login_user", "register_advisor", "create_order", "reply_order"]
+    flow_steps = ["login_user", "create_order", "login_advisor", "complete_order"]
 
     for test_name in flow_steps:
         func = ALL_TESTS.get(test_name)
@@ -259,10 +282,11 @@ def test_user_flow():
 ALL_TESTS = {
     "register_user": register_user,
     "login_user": login_user,
+    "login_advisor": login_advisor,
     "register_advisor": register_advisor,
     "get_advisor_list": get_advisor_list,
     "create_order": create_order,
-    "reply_order": reply_order,
+    "complete_order": complete_order,
 }
 
 
@@ -287,8 +311,8 @@ def run_single_test(test_name):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         command = sys.argv[1]
-        if command == "flow":
-            test_user_flow()
+        if command == "flow1":
+            flow1()
         elif command in ALL_TESTS:
             run_single_test(command)
         else:
@@ -304,7 +328,7 @@ if __name__ == "__main__":
     else:
         # 默认行为：显示帮助
         print("用法:")
-        print("  python test.py <test_name>  # 运行单个测试（自动处理依赖）")
+        print("  py|thon test.py <test_name>  # 运行单个测试（自动处理依赖）")
         print("  python test.py flow         # 运行完整用户流程")
         print("\n可用测试:")
         for name in ALL_TESTS:

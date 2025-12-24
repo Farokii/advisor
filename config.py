@@ -10,7 +10,8 @@ class Settings:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key")  # 用于JWT签名的密钥
     ALGORITHM: str = "HS256"  # JWT使用的算法
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # JWT令牌过期时间(分钟)
-
+    URGENT_EXPIRE_MINUTES: int = 5 # 加急订单过期时间(分钟)
+    NORMAL_EXPIRE_MINUTES: int = 10 # 普通订单过期时间(分钟）
     # 数据库配置
     MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
     MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "password")
@@ -24,7 +25,8 @@ class Settings:
     #Redis配置
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
-
     REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    ORDER_DETAILS_EXPIRE_MINUTES: int = 300
+    REVIEW_EXPIRE_MINUTES: int = 360
 
     DEBUG: bool = os.getenv("DEBUG", "False") == "True"  # 调试模式
