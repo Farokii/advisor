@@ -78,7 +78,7 @@ class AdvisorLogin(BaseModel):
     )
 #信息修改
 class AdvisorUpdateProfile(BaseModel):
-    name : str = Field(...,max_length=50)
+    name : Optional[str] = Field(None, max_length=50)
     bio: str = Field(default="", max_length=20)
     work_experience: str = Field(default="", max_length=50)
     about: str = Field(default="", max_length=500)

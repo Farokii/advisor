@@ -1,5 +1,5 @@
 import dependencies
-from schemas import user_schema, order_schema, review_schema
+from schemas import user_schema, order_schema, review_schema, favorites_schema
 from services import user_service
 from fastapi import FastAPI,Depends,HTTPException,APIRouter
 from SQL.database import engine,get_db,Base
@@ -30,9 +30,9 @@ async def user_update_profile(
 async def active_advisors(db: Session = Depends(get_db), current_user_id: int=Depends(dependencies.get_current_user_id)):
     return user_service.active_advisors(db, current_user_id)
 #用户端-顾问主页
-@router.get("/advisor-profile", response_model = user_schema.AdvisorProfileResponse)
+@router.get("/advisor-profile/{advisor_id}", response_model = user_schema.AdvisorProfileResponse)
 async def get_advisor_profile(
-        advisor_id: user_schema.AdvisorID,
+        advisor_id: int,
         db: Session=Depends(get_db),
         current_usr_id: int=Depends(dependencies.get_current_user_id)
 ):
@@ -45,7 +45,7 @@ async def create_order(
         current_user_id: int = Depends(dependencies.get_current_user_id)
 ):
     return user_service.create_order(db,current_user_id,order)
-#用户端-创建订单
+#用户端-创建列表
 @router.get("/order-list", response_model = List[order_schema.OrderListResponse])
 async def order_list(db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
     user_order_list = user_service.order_list(db,current_user_id)
@@ -75,6 +75,19 @@ async def review_tip(order_id: int,
                     db: Session = Depends(get_db),
                     current_user_id: int = Depends(dependencies.get_current_user_id)):
     return user_service.review_tip(order_id, review,db, current_user_id)
-
+# 用户端-流水信息
+@router.get("/coin-trans", response_model = List[order_schema.CoinTransResponse] )
+async def coin_trans(current_user_id: int = Depends(dependencies.get_current_user_id)):
+    return user_service.coin_trans(current_user_id)
 # 用户端-收藏顾问
-#@router.get("/save-advisor/{advisor_id}", response_model = dict)
+@router.post("/save-advisor/{advisor_id}", response_model = favorites_schema.SaveAdvisorResponse)
+async def save_advisor(advisor_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
+    return user_service.save_advisor(db, current_user_id, advisor_id)
+# 用户端-取消收藏顾问
+@router.delete("/unsave-advisor/{advisor_id}", response_model = dict)
+async def unsave_advisor(advisor_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
+    return user_service.unsave_advisor(db, current_user_id, advisor_id)
+# 用户端-收藏列表
+@router.get("/favorites-list", response_model = List[favorites_schema.SaveAdvisorResponse])
+async def favorites_list(db: Session = Depends(get_db), current_user_id: int = Depends(dependencies.get_current_user_id)):
+    return user_service.favorites_list(db, current_user_id)

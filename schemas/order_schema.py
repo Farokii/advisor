@@ -30,7 +30,14 @@ class OrderDetailsResponse(BaseModel):
     is_urgent: bool
     general_situation: str = Field(..., max_length=5000)
     specific_question: str = Field(..., max_length=200)
-    reply: str = Field(..., max_length=5000)
+    reply: Optional[str] = Field(None, max_length=5000)
     created_at: datetime
     updated_at: Optional[datetime] = None
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
+class CoinTransResponse(BaseModel):
+    type: str = Field(...)
+    credit: str = Field(...)
+    time: str = Field(...)
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)

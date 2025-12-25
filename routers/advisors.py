@@ -80,3 +80,7 @@ async def complete_order(order_id: int,
                          db: Session = Depends(get_db),
                          current_advisor_id: int = Depends(dependencies.get_current_user_id)):
     return advisor_service.complete_order(db, current_advisor_id, order_id, reply)
+# 顾问-流水列表
+@router.get("/coin-trans", response_model = List[order_schema.CoinTransResponse])
+async def coin_trans(advisor_id: int = Depends(dependencies.get_current_user_id)):
+    return advisor_service.coin_trans(advisor_id)

@@ -27,7 +27,7 @@ class Advisor(Base):
 
     service_status=Column(Enum(ServiceStatus), default=ServiceStatus.in_service)#工作状态
     work_status=Column(Enum(WorkStatus), default=WorkStatus.available)
-    completed_readings = Column(Integer,nullable=False,default=0)
+    completed_readings = Column(Integer,nullable=False,default=0) # 完成订单数
     readings=Column(Integer, nullable=False,default=0)#总订单数
     ratings = Column(Float, nullable=False,default=0.0)#顾问评分
     review_count=Column(Integer, nullable=False,default=0)#评论数

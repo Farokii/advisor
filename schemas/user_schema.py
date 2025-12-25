@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import datetime,date
 from utils import to_camel
 from models.order_model import OrderType, OrderStatus
-from schemas.review_schema import AdvisorProfileReview
+from schemas.review_schema import AdvisorReviewResponse
 class UserBase(BaseModel):
     """基础用户信息（不含密码、ID、时间戳）"""
     phone_number: str = Field(...,min_length=6,max_length=20
@@ -92,7 +92,7 @@ class AdvisorProfile(BaseModel):
     about: str = Field(default="", max_length=500)
     work_experience: str = Field(..., max_length=50)
 
-    rating: float = Field(..., ge=1.0, le=5.0)
+    ratings: float = Field(..., ge=0.0, le=5.0)
     review_count: int = Field(..., ge=0)
 
     readings: int = Field(default=0, ge=0)
@@ -121,7 +121,7 @@ class AdvisorProfile(BaseModel):
     )
 class AdvisorProfileResponse(BaseModel):
     profile: AdvisorProfile
-    reviews: Optional[List[AdvisorProfileReview]] = None
+    reviews: Optional[List[AdvisorReviewResponse]] = None
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 #用户端-创建订单

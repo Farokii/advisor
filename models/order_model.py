@@ -49,3 +49,4 @@ class Order(Base):
     #关联定义
     user = relationship("User", back_populates="orders")
     advisor = relationship("Advisor", back_populates="orders")
+    review = relationship("Review", back_populates="order")

@@ -18,7 +18,7 @@ class Review(Base):
     tip = Column(Float, nullable=True, default=0.0) # 打赏
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    order = relationship("Order", back_populates="reviews")
+    order = relationship("Order", back_populates="review")
     user = relationship("User", back_populates="reviews")
     advisor = relationship("Advisor", back_populates="reviews")
 

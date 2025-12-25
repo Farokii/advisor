@@ -4,9 +4,10 @@ from config import Settings
 import security
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
-from schemas import user_schema, review_schema
-from cruds import user_crud, advisor_crud, order_crud, review_crud
+from schemas import user_schema, review_schema, order_schema
+from cruds import user_crud, advisor_crud, order_crud, review_crud, favorites_crud
 from models.order_model import OrderType, OrderStatus
+from coin_trans import get_coin_trans
 settings = Settings()
 
 #1.用户端-注册
@@ -59,7 +60,7 @@ def active_advisors(db: Session,user_id :int):
     return user_crud.get_active_advisors(db, user_id)
 
 #5.用户端-顾问主页
-def get_advisor_profile(db: Session, user_id: int, advisor_id: user_schema.AdvisorID):
+def get_advisor_profile(db: Session, user_id: int, advisor_id: int):
     return user_crud.get_advisor_profile(db,advisor_id)
 
 #6.用户端-创建订单
@@ -151,3 +152,25 @@ def review_tip(order_id: int, review: review_schema.ReviewInfo, db: Session, use
             detail=f"The order {order_id} is pending and can't be reviewed now",
         )
     return review_crud.review_tip(db, order_id, review, user_id)
+
+
+def save_advisor(db: Session, user_id: int, advisor_id: int):
+    return favorites_crud.save_advisor(db, user_id, advisor_id)
+
+
+def unsave_advisor(db: Session, user_id: int, advisor_id: int):
+    return favorites_crud.unsave_advisor(db, user_id, advisor_id)
+
+
+def favorites_list(db: Session, user_id: int):
+    return favorites_crud.favorites_list(db, user_id)
+
+def coin_trans(user_id: int):
+    logs=get_coin_trans("user", user_id)
+    return [
+        order_schema.CoinTransResponse(
+            type=log.get("type"),
+            credit=log.get("credit"),
+            time=log.get("time"),
+        )for log in logs
+    ]

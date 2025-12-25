@@ -1,10 +1,10 @@
 import security
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
-from schemas import advisor_schema
+from schemas import advisor_schema, order_schema
 from cruds import advisor_crud, order_crud
 from models import order_model
-
+from coin_trans import get_coin_trans
 #1.顾问端-注册
 def register(db: Session, advisor: advisor_schema.AdvisorCreate):
     #检查手机号是否已注册
@@ -114,3 +114,14 @@ def complete_order(db: Session, advisor_id: int, order_id: int, reply: advisor_s
             detail=f"Order {order_id} is not pending",
         )
     return order_crud.complete_order(db, order_id, advisor_id,reply)
+
+#顾问端-流水列表
+def coin_trans(advisor_id: int):
+    logs=get_coin_trans("advisor", advisor_id)
+    return [
+        order_schema.CoinTransResponse(
+            type=log.get("type"),
+            credit=log.get("credit"),
+            time=log.get("time"),
+        )for log in logs
+    ]

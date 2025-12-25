@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from models import user_model,advisor_model,order_model, review_model
 from schemas import user_schema, advisor_schema, review_schema
 from sqlalchemy.orm import Session
@@ -50,27 +52,42 @@ def get_active_advisors(db:Session,user_id:int):
         advisor_model.Advisor.service_status == advisor_model.ServiceStatus.in_service).all()
     return active_advisors
 
-def get_advisor_profile(db: Session, advisor_id: user_schema.AdvisorID):
-    db_advisor = db.query(advisor_model.Advisor).filter(advisor_model.Advisor.id == advisor_id.id).first()
+def get_advisor_profile(db: Session, advisor_id: int):
+    db_advisor = db.query(advisor_model.Advisor).filter(advisor_model.Advisor.id == advisor_id).first()
     profile = user_schema.AdvisorProfile.model_validate(db_advisor)
-
-    reviews = json.loads(redis_client.zrevrange(f"review:advisor:{db_advisor.id}", 0, 9)) # 只取前十条评论显示
-    if reviews is None:
+    if db_advisor is None:
+        raise HTTPException(status_code=404, detail="Advisor not found")
+    # 计算准时率
+    if db_advisor.readings == 0:
+        profile.on_time = f"{0}%"
+    else: profile.on_time = f"{(db_advisor.completed_readings / db_advisor.readings) * 100:.0f}%"
+    # 只取前十条评论
+    reviews_raw = redis_client.zrevrange(f"review:advisor:{db_advisor.id}", 0, 9)
+    reviews = []
+    for review in reviews_raw:
+        try:
+            reviews.append(json.loads(review))
+        except json.decoder.JSONDecodeError:
+            continue
+    # 空列表不会被视为None，但会被视为False
+    if not reviews:
        reviews = db.query(review_model.Review).filter(
            review_model.Review.advisor_id == db_advisor.id).order_by(
            review_model.Review.created_at.desc()).limit(10).all()
-
+    print(len(reviews))
     review_list = [
-        review_schema.AdvisorProfileReview(
-            review_id=review.id,
+        review_schema.AdvisorReviewResponse(
             order_id=review.order_id,
             user_id=review.user_id,
-            name=review.user_name,
+            advisor_id=review.advisor_id,
+            user_name=review.user_name,
             order_type=review.order_type,
+            rating=review.rating,
             review_text=review.review_text,
-            created_time=review.created_at,
+            created_at=review.created_at,
         ) for review in reviews
     ]
+
     return user_schema.AdvisorProfileResponse(
         profile=profile,
         reviews=review_list
