@@ -45,16 +45,7 @@ def review_tip(db: Session, order_id: int, review: review_schema.ReviewInfo, use
     db.refresh(db_review)
     # redis存评论详情 用户本人查看时能看到tip,存到顾问评论表中没有tip
     now_time = int(time.time())
-    review_details = review_schema.AdvisorReviewResponse(
-        order_id=db_review.order_id,
-        user_id=db_review.user_id,
-        advisor_id=db_review.id,
-        user_name=db_review.user_name,
-        order_type=db_review.order_type,
-        rating=db_review.rating,
-        review_text=db_review.review_text,
-        created_at=db_review.created_at,
-    )
+    review_details = review_schema.AdvisorReviewResponse.model_validate(db_review)
     redis_client.zadd(f"review:advisor:{db_advisor}", {review_details.model_dump_json(): now_time})
 
     return {"id": db_review.id, "review_tip": "success"}
