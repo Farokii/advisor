@@ -1,8 +1,11 @@
 #处理业务逻辑，与数据库操作解耦
 from datetime import timedelta
+
+from sqlalchemy.util import await_only
+
 from config import Settings
 import security
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException,status
 from schemas import user_schema, review_schema, order_schema
 from cruds import user_crud, advisor_crud, order_crud, review_crud, favorites_crud
@@ -11,17 +14,17 @@ from coin_trans import get_coin_trans
 settings = Settings()
 
 #1.用户端-注册
-def register(db: Session, user: user_schema.UserCreate):
+async def register(db: AsyncSession, user: user_schema.UserCreate):
     #检查手机号是否已注册
-    db_user=user_crud.get_user_by_phone(db, phone=user.phone_number)
+    db_user=await user_crud.get_user_by_phone(db, phone=user.phone_number)
     if db_user:
         raise HTTPException(status_code=400, detail="Phone already registered")
-    return user_crud.create_user(db,user)
+    return await user_crud.create_user(db,user)
 
 #2.用户端-登录
-def login(db: Session, user: user_schema.UserLogin):
+async def login(db: AsyncSession, user: user_schema.UserLogin):
     # 通过手机号验证登录用户是否存在
-    db_user = user_crud.get_user_by_phone(db, user.phone_number)
+    db_user = await user_crud.get_user_by_phone(db, user.phone_number)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,8 +49,8 @@ def login(db: Session, user: user_schema.UserLogin):
     return {"access_token": access_token , "token_type":"bearer"}
 
 #3.用户端-更新个人信息
-def update_profile(db: Session,user_id :int,user: user_schema.UserUpdate):
-    updated_user=user_crud.update_user_profile(db,user_id,user)
+async def update_profile(db: AsyncSession, user_id: int, user: user_schema.UserUpdate):
+    updated_user=await user_crud.update_user_profile(db,user_id,user)
     if updated_user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,23 +59,23 @@ def update_profile(db: Session,user_id :int,user: user_schema.UserUpdate):
     return updated_user
 
 #4.用户端-顾问列表
-def active_advisors(db: Session,user_id :int):
-    return user_crud.get_active_advisors(db, user_id)
+async def active_advisors(db: AsyncSession, user_id: int):
+    return await user_crud.get_active_advisors(db)
 
 #5.用户端-顾问主页
-def get_advisor_profile(db: Session, user_id: int, advisor_id: int):
-    return user_crud.get_advisor_profile(db,advisor_id)
+async def get_advisor_profile(db: AsyncSession, user_id: int, advisor_id: int):
+    return await user_crud.get_advisor_profile(db, advisor_id)
 
 #6.用户端-创建订单
-def create_order(db: Session, user_id :int, order: user_schema.CreateOrder):
-    db_user = user_crud.get_user_by_id(db, user_id)
+async def create_order(db: AsyncSession, user_id :int, order: user_schema.CreateOrder):
+    db_user = await user_crud.get_user_by_id(db, user_id)
     if db_user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
-    db_advisor = advisor_crud.get_advisor_by_id(db, order.advisor_id)
+    db_advisor = await advisor_crud.get_advisor_by_id(db, order.advisor_id)
     #判断订单顾问是否存在
     if db_advisor is None:
         raise HTTPException(
@@ -112,15 +115,15 @@ def create_order(db: Session, user_id :int, order: user_schema.CreateOrder):
             detail=f"The user is unable to pay for this order",
         )
 
-    new_order = order_crud.create_order(db, user_id, order, price)
+    new_order = await order_crud.create_order(db, user_id, order, price)
     return new_order
 
 
-def order_list(db: Session, user_id : int):
-    return order_crud.user_order_list(db, user_id)
+async def order_list(db: AsyncSession, user_id : int):
+    return await order_crud.user_order_list(db, user_id)
 
-def order_details(db: Session, user_id: int, order_id: int):
-    order = order_crud.get_order_by_id(db, order_id)
+async def order_details(db: AsyncSession, user_id: int, order_id: int):
+    order = await order_crud.get_order_by_id(db, order_id)
     if order is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -131,11 +134,11 @@ def order_details(db: Session, user_id: int, order_id: int):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"The user {user_id} is not allowed to see order {order_id} details",
         )
-    return order_crud.get_order_details(db, order_id)
+    return await order_crud.get_order_details(db, order_id)
 
 
-def review_tip(order_id: int, review: review_schema.ReviewInfo, db: Session, user_id : int):
-    db_order = order_crud.get_order_by_id(db, order_id)
+async def review_tip(order_id: int, review: review_schema.ReviewInfo, db: AsyncSession, user_id : int):
+    db_order = await order_crud.get_order_by_id(db, order_id)
     if db_order is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -151,22 +154,22 @@ def review_tip(order_id: int, review: review_schema.ReviewInfo, db: Session, use
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"The order {order_id} is pending and can't be reviewed now",
         )
-    return review_crud.review_tip(db, order_id, review, user_id)
+    return await review_crud.review_tip(db, order_id, review, user_id)
 
 
-def save_advisor(db: Session, user_id: int, advisor_id: int):
-    return favorites_crud.save_advisor(db, user_id, advisor_id)
+async def save_advisor(db: AsyncSession, user_id: int, advisor_id: int):
+    return await favorites_crud.save_advisor(db, user_id, advisor_id)
 
 
-def unsave_advisor(db: Session, user_id: int, advisor_id: int):
-    return favorites_crud.unsave_advisor(db, user_id, advisor_id)
+async def unsave_advisor(db: AsyncSession, user_id: int, advisor_id: int):
+    return await favorites_crud.unsave_advisor(db, user_id, advisor_id)
 
 
-def favorites_list(db: Session, user_id: int):
-    return favorites_crud.favorites_list(db, user_id)
+async def favorites_list(db: AsyncSession, user_id: int):
+    return await favorites_crud.favorites_list(db, user_id)
 
-def coin_trans(user_id: int):
-    logs=get_coin_trans("user", user_id)
+async def coin_trans(user_id: int):
+    logs = await get_coin_trans("user", user_id)
     return [
         order_schema.CoinTransResponse(
             type=log.get("type"),

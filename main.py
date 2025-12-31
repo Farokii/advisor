@@ -5,11 +5,19 @@ from routers import users,advisors
 from fastapi import FastAPI,Depends,HTTPException
 from SQL.database import engine,get_db,Base
 from cruds.order_crud import process_expired_orders
+from config import Settings
+import os
 
+# 在mysql数据库建表
+async def create_tables():
+    """异步创建所有表"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
-    print("Starting up...")
+    print("Development Mode Starting up...")
+    await create_tables()  # 创建数据库表
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         func=process_expired_orders,
@@ -29,7 +37,6 @@ async def lifespan(app_instance: FastAPI):
 
 app = FastAPI(version="1.0.0", lifespan=lifespan)
 
-Base.metadata.create_all(bind=engine)
 
 app.include_router(users.router)
 

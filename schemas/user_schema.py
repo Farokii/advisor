@@ -6,8 +6,8 @@ from models.order_model import OrderType, OrderStatus
 from schemas.review_schema import AdvisorReviewResponse
 class UserBase(BaseModel):
     """基础用户信息（不含密码、ID、时间戳）"""
-    phone_number: str = Field(...,min_length=6,max_length=20
-        #pattern=r"^1[3-9]\d{9}$",
+    phone_number: str = Field(...,min_length=6,max_length=20,
+        pattern=r"^1[3-9]\d{9}$",
         #description="中国大陆11位手机号",
         #examples=["13812345678"]
     )

@@ -20,15 +20,16 @@ class Settings:
     MYSQL_DB: str = os.getenv("MYSQL_DB", "advisor_db")
 
     # 构建数据库连接URL
-    DATABASE_URL: str = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+    DATABASE_URL: str = f"mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
 
     #Redis配置
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
-    REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    REDIS_DB: str = os.getenv("REDIS_DB", "0")
+    REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
     ORDER_DETAILS_EXPIRE_MINUTES: int = 60
     REVIEW_EXPIRE_MINUTES: int = 30
     COIN_TRANS_EXPIRE_DAYS: int = 3
 
-    DEBUG: bool = os.getenv("DEBUG", "False") == "True"  # 调试模式
+    TEST: bool = os.getenv("TEST", "False")  # 测试模式
